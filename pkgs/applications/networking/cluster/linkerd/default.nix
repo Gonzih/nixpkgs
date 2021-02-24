@@ -1,21 +1,32 @@
 { lib, fetchFromGitHub, buildGoModule }:
 
-buildGoModule {
-  pname = "linkerd-unstable";
-  version = "2020-05-01";
+
+let
+  channel = "edge";
+in buildGoModule rec {
+  pname = "linkerd-${channel}";
+  version = "21.2.3";
 
   src = fetchFromGitHub {
     owner = "linkerd";
     repo = "linkerd2";
-    rev = "9e9f3bb1e2aeab8cf20f98f5cad159bbb6f24883";
-    sha256 = "1pvj31wz1klwhcqga1m8kixdqsxwmppp9ix6r3wpp4dwfig45fm0";
+    rev = "${channel}-${version}";
+    sha256 = "0vdp40c608l8v748fwblk6hbpscp9xnf00y12frnxc1c1mb6n34y";
   };
 
-  vendorSha256 = "0vls58ld50jca5yn73kvg3lx4z83cc7skky54a90pkbj737y58pz";
+  vendorSha256 = "07k1vm93zga95hgcrf7na12gwv66n9qy9q65n010d6zsp0kiggpc";
 
-  doCheck = false;
+  preBuild = ''
+    go generate ./pkg/charts/static
+    go generate ./jaeger/static
+    go generate ./multicluster/static
+    go generate ./viz/static
+  '';
 
-  subPackages = [ "cli/cmd" ];
+  buildFlagsArray = [ "-tags prod" ];
+  runVend = true;
+  doCheck = true;
+  subPackages = [ "cli" ];
 
   meta = with lib; {
     description = "A service mesh for Kubernetes and beyond";
